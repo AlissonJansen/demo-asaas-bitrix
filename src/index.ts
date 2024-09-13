@@ -7,7 +7,7 @@ const port = process.env.PORT || 5500;
 
 appConfig(app);
 
-setInterval(keepAlive, 5000);
+setInterval(keepAlive, 50000);
 
 app.listen(port, () => {
   console.log("app rodando");
