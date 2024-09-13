@@ -78,7 +78,6 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
   try {
     switch (deal.STAGE_ID) {
       case "C9:NEW": // Entrada
-        console.log(deal);
         break;
       case "C9:PREPARATION": // Solicitar pagamento
         const assasCustomer: Record<string, any> = {

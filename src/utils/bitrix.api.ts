@@ -279,7 +279,6 @@ export class BitrixAPI {
     const data = await response.json();
 
     if (!response.ok) {
-      console.log(data);
       throw new Error(
         `Erro ao adicionar id do assas no contato do bitrix: ${response.statusText}`
       );
