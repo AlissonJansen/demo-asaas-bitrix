@@ -95,7 +95,7 @@ export class AssasAPI {
         .updateStage(+customerData.externalReference!, "C9:PREPAYMENT_INVOICE")
         .catch((e) => {}); // move para coluna de erro
 
-      return;
+      throw new Error("Numero de telefone informado na criação é inválido");
     }
 
     const options: RequestInit = {

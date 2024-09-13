@@ -94,6 +94,10 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
 
         for (let field in assasCustomer) {
           if (!assasCustomer[field]) {
+            await bitrixAPI
+              .updateStage(id, "C9:PREPAYMENT_INVOICE")
+              .catch((e) => {}); // move para coluna de erro
+              
             await bitrixAPI.addLog(
               id,
               "Atenção! verifique se o contato não possui um dos seguintes campos",
@@ -102,9 +106,14 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
               "2"
             );
 
-            await bitrixAPI
-              .updateStage(id, "C9:PREPAYMENT_INVOICE")
-              .catch((e) => {}); // move para coluna de erro
+            await bitrixAPI.addLog(
+              customer.ID,
+              "Atenção! Para criar uma cobraça com este cliente, devem ser informados:",
+              `Email - Telefone - Nome - Numero - Rua - Bairro - Codigo postal - cpfCnpj`,
+              "attention",
+              "3"
+            );
+
             return;
           }
         }
