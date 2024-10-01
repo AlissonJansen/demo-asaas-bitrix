@@ -3,16 +3,14 @@ import { BitrixAPI } from "../apis/bitrix.api";
 import { bitrixVariables } from "../utils/bitrix.variables";
 import { Stages } from "../interfaces/stages";
 import { AssasAPI } from "../apis/assas.api";
+import { dotenvConfig } from "../config/env.config";
 
 const AssasRouter = Router();
 const bitrixAPI = new BitrixAPI();
 
 AssasRouter.post("/assas", async (req: Request, res: Response) => {
-  // if (req.headers["asaas-access-token"] !== dotenvConfig.ASSAS.WEBHOOK_TOKEN)
-  //   return res.status(400).send("Unauthorized");
-
-  // console.log("safe");
-  // return res.status(200).send("ok");
+  if (req.headers["asaas-access-token"] !== dotenvConfig.ASSAS.WEBHOOK_TOKEN)
+    return res.status(400).send("Unauthorized");
 
   try {
     switch (req.body.event) {

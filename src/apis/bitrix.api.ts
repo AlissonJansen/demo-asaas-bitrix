@@ -61,11 +61,6 @@ export class BitrixAPI {
       }
     }
 
-    console.log({
-      refresh_token: this.bitrix_refresh_token,
-      access_token: this.bitrix_access_token,
-    });
-
     return true;
   }
 
