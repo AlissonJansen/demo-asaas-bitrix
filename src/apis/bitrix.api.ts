@@ -1,6 +1,6 @@
 import { dotenvConfig } from "../config/env.config";
-import { Stages } from "../interfaces/stages.interface";
-import { bitrixVariables } from "./bitrix.variables";
+import { Stages } from "../interfaces/stages";
+import { bitrixVariables } from "../utils/bitrix.variables";
 
 export class BitrixAPI {
   private bitrix_access_token =
@@ -113,7 +113,7 @@ export class BitrixAPI {
     return data.result;
   }
 
-  async updateStage(dealID: number, stage: Stages) {
+  async updateStage(dealID: number, stage: string) {
     await this.grantValidToken();
 
     const options: RequestInit = {
@@ -138,23 +138,51 @@ export class BitrixAPI {
     return data.result;
   }
 
-  async updateDeal(
-    dealID: number,
-    updates: { boleto?: string; customer_id?: string; deal_id?: string; pagamento?: string }
-  ) {
+  async addDetails(dealID: number, fields: Record<string, string | undefined>) {
     await this.grantValidToken();
 
     const options: RequestInit = {
       method: "GET",
     };
 
-    const source_description = `boleto: ${updates.boleto}\npagamento: ${updates.pagamento}\n\ncustomer_id: ${updates.customer_id}\ndeal_id: ${updates.deal_id}\n`;
+    let source_description = [];
+
+    for (let key in fields) {
+      if(fields[key] === undefined) continue;
+      source_description.push(`&fields[${key}]=${encodeURIComponent(fields[key])}`);
+    }
 
     const response = await fetch(
       `https://${dotenvConfig.BITRIX.ID}.bitrix24.com.br/rest/crm.deal.update/` +
         `?auth=${this.bitrix_access_token}` +
         `&id=${dealID}` +
-        `&fields[SOURCE_DESCRIPTION]=${encodeURIComponent(source_description)}`,
+        source_description.join().replace(/\,/g, ""),
+      options
+    );
+
+    if (!response.ok)
+      throw new Error(
+        `Erro ao alterar status da cobrança no bitrix: ${response.statusText}`
+      );
+
+    const data = await response.json();
+
+    return data.result;
+  }
+
+  async addDealAndCustomerID(dealID: number, customerID: string) {
+    await this.grantValidToken();
+
+    const options: RequestInit = {
+      method: "GET",
+    };
+
+    const response = await fetch(
+      `https://${dotenvConfig.BITRIX.ID}.bitrix24.com.br/rest/crm.deal.update/` +
+        `?auth=${this.bitrix_access_token}` +
+        `&id=${dealID}` +
+        `&fields[${bitrixVariables.negocio.clienteID}]=${customerID}` +
+        `&fields[${bitrixVariables.negocio.cobrancaID}]=${dealID}`,
       options
     );
 
@@ -198,11 +226,11 @@ export class BitrixAPI {
   }
 
   async addLog(
-    dealID: number,
+    id: number,
     title: string,
     text: string,
     icon: "attention" | "info" | "check",
-    entityTypeID: "2" | "3"
+    entityType: "deal" | "contact"
   ) {
     // 2 = deal
     // 3 = contact
@@ -212,11 +240,13 @@ export class BitrixAPI {
       method: "GET",
     };
 
+    const entityTypeID = entityType === "deal" ? 2 : 3;
+
     const response = await fetch(
       `https://${dotenvConfig.BITRIX.ID}.bitrix24.com.br/rest/crm.timeline.logmessage.add/` +
         `?auth=${this.bitrix_access_token}` +
         `&fields[entityTypeId]=${entityTypeID}` +
-        `&fields[entityId]=${dealID}` +
+        `&fields[entityId]=${id}` +
         `&fields[title]=${encodeURIComponent(title)}` +
         `&fields[text]=${encodeURIComponent(text)}` +
         `&fields[iconCode]=${icon}`,
@@ -225,7 +255,7 @@ export class BitrixAPI {
 
     if (!response.ok)
       throw new Error(
-        `Erro ao adicionar Log no Negócio ${dealID} do bitrix: ${response.statusText}`
+        `Erro ao adicionar Log no Negócio ${id} do bitrix: ${response.statusText}`
       );
 
     const data = await response.json();
@@ -259,14 +289,20 @@ export class BitrixAPI {
     return data.result;
   }
 
-  async addAssasID(bitrixID: number, assasCustomerID: string, contaSecundaria?: boolean) {
+  async addAssasID(
+    bitrixID: number,
+    assasCustomerID: string,
+    contaWallet: string
+  ) {
     await this.grantValidToken();
 
     const options: RequestInit = {
       method: "GET",
     };
 
-    const contaID = contaSecundaria ? bitrixVariables.contato.secondary_assasID : bitrixVariables.contato.primary_assasID;
+    const contaID = contaWallet === dotenvConfig.ASSAS.ROSAS.WALLET_ID
+      ? bitrixVariables.contato.rosas_assasID
+      : bitrixVariables.contato.rozza_assasID;
 
     const response = await fetch(
       `https://${dotenvConfig.BITRIX.ID}.bitrix24.com.br/rest/crm.contact.update/` +
@@ -283,14 +319,6 @@ export class BitrixAPI {
         `Erro ao adicionar id do assas no contato do bitrix: ${response.statusText}`
       );
     }
-
-    await this.addLog(
-      bitrixID,
-      "Contato adicionado!",
-      `Contato adicionado na conta do Assas com sucesso!`,
-      "check",
-      "3"
-    );
 
     return data.result;
   }

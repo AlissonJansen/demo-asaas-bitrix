@@ -13,13 +13,13 @@ export const dotenvConfig = {
     },
   },
   ASSAS: {
-    PRIMARY: {
-      API_KEY: process.env.ASSAS_PRIMARY_API_KEY,
-      WALLET_ID: process.env.ASSAS_PRIMARY_WALLET_ID,
+    ROSAS: {
+      API_KEY: process.env.ASSAS_ROSAS_API_KEY!,
+      WALLET_ID: process.env.ASSAS_ROSAS_WALLET_ID!,
     },
-    SECONDARY: {
-      API_KEY: process.env.ASSAS_SECONDARY_API_KEY,
-      WALLET_ID: process.env.ASSAS_SECONDARY_WALLET_ID,
+    ROZZA: {
+      API_KEY: process.env.ASSAS_ROZZA_API_KEY!,
+      WALLET_ID: process.env.ASSAS_ROZZA_WALLET_ID!,
     },
     WEBHOOK_TOKEN: process.env.ASSAS_WEBHOOK_TOKEN,
   },

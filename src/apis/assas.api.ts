@@ -1,19 +1,19 @@
-import { dotenvConfig } from "../config/env.config";
 import { BillingData } from "../interfaces/billing.interface";
 import { InvoiceData } from "../interfaces/invoice.interface";
-import { Customer } from "../validators/contact.validator";
+import { Parcelamento } from "../interfaces/parcelamento.interface";
+import { Stages } from "../interfaces/stages";
+import { accountHandler } from "../utils/account.handler";
 import { BitrixAPI } from "./bitrix.api";
 import { phone } from "phone";
 
 export class AssasAPI {
-  constructor(private readonly contaSecundaria: boolean) {}
+  constructor(conta: { ID: string; VALUE: string }) {
+    [this.API_KEY, this.WALLET, this.account] = accountHandler(conta);
+  }
 
-  private readonly API_KEY = this.contaSecundaria
-    ? dotenvConfig.ASSAS.SECONDARY.API_KEY
-    : dotenvConfig.ASSAS.PRIMARY.API_KEY;
-  private readonly WALLET = this.contaSecundaria
-    ? dotenvConfig.ASSAS.SECONDARY.WALLET_ID
-    : dotenvConfig.ASSAS.PRIMARY.WALLET_ID;
+  private readonly WALLET: string;
+  private readonly API_KEY: string;
+  readonly account: string;
 
   private readonly url = "https://sandbox.asaas.com/api/v3";
   private readonly bitrixAPI = new BitrixAPI();
@@ -69,16 +69,6 @@ export class AssasAPI {
   }
 
   async createCustomer(customerData: any) {
-    const customer = await this.findCustomerByEmail(customerData.email);
-
-    if (customer) {
-      await this.bitrixAPI.addAssasID(
-        customer.externalReference,
-        customer.id,
-        this.contaSecundaria
-      );
-      return customer;
-    }
 
     const numero = phone(customerData.mobilePhone);
 
@@ -88,11 +78,14 @@ export class AssasAPI {
         "Erro criando cliente no Assas",
         `Numero de telefone inválido`,
         "attention",
-        "3"
+        "contact"
       ); // Adiciona log de erro
 
       await this.bitrixAPI
-        .updateStage(+customerData.externalReference!, "C9:PREPAYMENT_INVOICE")
+        .updateStage(
+          +customerData.externalReference!,
+          Stages.ERRO_SOLICITANDO_PAGAMENTO
+        )
         .catch((e) => {}); // move para coluna de erro
 
       throw new Error("Numero de telefone informado na criação é inválido");
@@ -130,7 +123,7 @@ export class AssasAPI {
         "Erro criando cliente no Assas",
         `${errorsList}`,
         "attention",
-        "3"
+        "contact"
       ); // Adiciona log de erro
 
       await this.bitrixAPI
@@ -142,19 +135,10 @@ export class AssasAPI {
       );
     }
 
-    await this.bitrixAPI.addAssasID(
-      data.externalReference,
-      data.id,
-      this.contaSecundaria
-    );
-
     return data;
   }
 
-  async updateCustomer(customerID: string, customerData: Customer) {
-    // checa se o cliente existe, se não existe, cria e retorna o id.
-
-    if (!customerID) return await this.createCustomer(customerData);
+  async updateCustomer(customerID: string, customerData: Record<string, any>) {
 
     const numero = phone(customerData.mobilePhone);
 
@@ -164,7 +148,7 @@ export class AssasAPI {
         "Erro alterando cliente no Asaas",
         `Numero de telefone inválido`,
         "attention",
-        "3"
+        "contact"
       ); // Adiciona log de erro
 
       return;
@@ -205,19 +189,11 @@ export class AssasAPI {
         "Erro alterando cliente no Asaas",
         `${errorsList}`,
         "attention",
-        "3"
+        "contact"
       ); // Adiciona log de erro
 
-      throw new Error();
+      throw new Error(errorsList);
     }
-
-    await this.bitrixAPI.addLog(
-      +customerData.externalReference!,
-      "Usuário alterado com sucesso!",
-      `Update realizado com sucesso no Assas`,
-      "check",
-      "3"
-    );
 
     return data;
   }
@@ -273,7 +249,7 @@ export class AssasAPI {
     return data;
   }
 
-  async createBill(billingData: BillingData) {
+  async cobranca(billingData: BillingData) {
     const options: RequestInit = {
       method: "POST",
       headers: {
@@ -290,6 +266,56 @@ export class AssasAPI {
     };
 
     const response = await fetch(`${this.url}/payments`, options);
+    const dealID = billingData.customer.externalReference.split("||")[0]
+    const data = await response.json();
+
+    if (!response.ok) {
+      // cria lista de erros
+      const errorsList = data.errors
+        .map(
+          (erro: { code: string; description: string }) =>
+            `- ${erro.description}\n`
+        )
+        .join();
+
+      await this.bitrixAPI.addLog(
+        dealID,
+        "Erro criando cobrança no Assas",
+        `${errorsList}`,
+        "attention",
+        "deal"
+      ); // Adiciona log de erro
+
+      await this.bitrixAPI.updateStage(
+        dealID,
+        Stages.ERRO_SOLICITANDO_PAGAMENTO
+      ); // move para coluna de erro
+
+      throw new Error(`Erro ao criar cobrança ${response.statusText}`);
+    }
+
+    return data;
+  }
+
+  async pagamentoParcelado(parcelamento: Parcelamento) {
+    const options: RequestInit = {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+        access_token: this.API_KEY!,
+        "User-Agent": this.WALLET!,
+      },
+      body: JSON.stringify({
+        ...parcelamento,
+        customer: parcelamento.customer.id,
+        externalReference: parcelamento.customer.externalReference,
+      }),
+    };
+
+    const dealID = parcelamento.customer.externalReference.split("||")[0]
+
+    const response = await fetch(`${this.url}/payments`, options);
 
     const data = await response.json();
 
@@ -303,22 +329,39 @@ export class AssasAPI {
         .join();
 
       await this.bitrixAPI.addLog(
-        +billingData.customer.externalReference,
-        "Erro criando cobrança no Assas",
+        dealID,
+        "Erro criando parcelamento no Assas",
         `${errorsList}`,
         "attention",
-        "2"
+        "deal"
       ); // Adiciona log de erro
 
       await this.bitrixAPI.updateStage(
-        +billingData.customer.externalReference,
-        "C9:PREPAYMENT_INVOICE"
+        dealID,
+        Stages.ERRO_SOLICITANDO_PAGAMENTO
       ); // move para coluna de erro
 
-      throw new Error(`Erro ao criar cobrança: ${response.statusText}`);
+      throw new Error(`Erro ao criar parcelamento: ${response.statusText}`);
     }
 
     return data;
+  }
+
+  async getParcelamento_cobrancas(parcelamentoID: string) {
+    const options: RequestInit = {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        access_token: this.API_KEY!,
+        "User-Agent": this.WALLET!,
+      }
+    };
+
+    const response = await fetch(`${this.url}/installments/${parcelamentoID}/payments?limit=20`, options);
+
+    const data = await response.json();
+
+    return data.data;
   }
 
   async requestInvoice(invoiceData: InvoiceData) {
@@ -358,12 +401,12 @@ export class AssasAPI {
         "Erro gerando requisição de nota fiscal",
         `${errorsList}`,
         "attention",
-        "2"
+        "deal"
       ); // Adiciona log de erro
 
       await this.bitrixAPI.updateStage(
         +invoiceData.externalReference!,
-        "C9:UC_C1T4PT"
+        Stages.ERRO_GERANDO_NOTA_FISCAL
       ); // move para coluna de erro
 
       throw new Error(
