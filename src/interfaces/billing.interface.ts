@@ -3,5 +3,6 @@ export interface BillingData {
   dueDate?: string;
   value?: number;
   description?: string;
+  observation?: string;
   customer: Record<string, any>
 }

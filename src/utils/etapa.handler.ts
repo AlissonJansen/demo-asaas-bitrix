@@ -21,7 +21,7 @@ export function etapaHandler(
         return {
           vencimento: 5,
           quantidadeDeParcelas: 1,
-          titulo: `5ª Parcela (${dueDateHandler(90)})`
+          titulo: `5ª Parcela (${dueDateHandler(90, true)})`
         };
       }
       case 3: {
@@ -59,7 +59,7 @@ export function etapaHandler(
       return {
         vencimento: 5,
         quantidadeDeParcelas: 1,
-        titulo: `5ª Parcela (${dueDateHandler(90)})`
+        titulo: `5ª Parcela (${dueDateHandler(90, true)})`
       };
     }
     case 4: {

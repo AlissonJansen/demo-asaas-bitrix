@@ -177,13 +177,17 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
               const etapa = deal[bitrixVariables.negocio.etapa_atual];
               const etapaDetails = etapaHandler(+etapa, tipoDeParcelamento);
               const etapaFinal = tipoDeParcelamento === "715" ? 4 : 5;
-              const titulo = deal.TITLE
+              let titulo = deal.TITLE;
+
+              if (titulo.split(" | ")[1]) {
+                titulo = titulo.split(" | ")[0];
+              }
 
               if (!etapa) {
                 await bitrixAPI.addDetails(deal.ID, {
                   [bitrixVariables.negocio.etapa_atual]: `2`,
                   [bitrixVariables.negocio.ultima_parcela_paga]: "0",
-                  TITLE: `${titulo} | ${etapaDetails.titulo}`
+                  TITLE: `${titulo} | ${etapaDetails.titulo}`,
                 });
 
                 await bitrixAPI.updateStage(id, Stages.NOVO);
@@ -194,7 +198,7 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
                 await bitrixAPI.addDetails(deal.ID, {
                   [bitrixVariables.negocio.etapa_atual]: `${+etapa + 1}`,
                   [bitrixVariables.negocio.ultima_parcela_paga]: "0",
-                  TITLE: `${titulo.split(" | ")[0]} | ${etapaDetails.titulo}`
+                  TITLE: `${titulo} | ${etapaDetails.titulo}`,
                 });
 
                 await bitrixAPI.updateStage(id, Stages.NOVO);

@@ -19,15 +19,80 @@ AssasRouter.post("/assas", async (req: Request, res: Response) => {
           const [dealID, tipoDePagamento, _] =
             req.body.payment.externalReference.split("||");
 
-          if (tipoDePagamento === "Parcela") return;
+          if (tipoDePagamento === "Parcela") {
+            const [dealID, tipoDePagamento, conta] =
+              req.body.payment.externalReference.split("||");
+
+            if (tipoDePagamento !== "Parcela") break;
+
+            const [id, value] = conta.split("-");
+            const assasAPI = new AssasAPI({ VALUE: value, ID: id });
+            const parcelamento = req.body.payment.installment;
+            const cobrancas = await assasAPI.getParcelamento_cobrancas(
+              parcelamento
+            );
+
+            const ultimaParcelaPaga =
+              req.body.payment.description.split(" ")[1];
+
+            await bitrixAPI.addDetails(dealID, {
+              [bitrixVariables.negocio.ultima_parcela_paga]: ultimaParcelaPaga,
+            });
+
+            const proximaCobranca = cobrancas.find(
+              (cobranca: any) =>
+                +cobranca.description.split(" ")[1] === +ultimaParcelaPaga + 1
+            );
+
+            const deal = await bitrixAPI.getDeal(dealID);
+            const contaRosas = deal[bitrixVariables.negocio.conta] === "727";
+
+            await bitrixAPI.addLog(
+              dealID,
+              "Pagamento efetuado!",
+              `Pagamento da ${ultimaParcelaPaga}ª parcela foi efetuado pelo cliente!`,
+              "check",
+              "deal"
+            );
+
+            if (proximaCobranca) {
+              await bitrixAPI.addDetails(dealID, {
+                [bitrixVariables.negocio
+                  .ultima_parcela_paga]: `${ultimaParcelaPaga}`,
+                SOURCE_DESCRIPTION: `boleto: ${proximaCobranca.bankSlipUrl}\npagamento: ${proximaCobranca.invoiceUrl}`,
+                [bitrixVariables.negocio.cobrancaID]: proximaCobranca.id,
+              });
+
+              await bitrixAPI.updateStage(
+                dealID,
+                contaRosas
+                  ? Stages.AGUARDANDO_PAGAMENTO
+                  : Stages.GERAR_NOTA_FISCAL
+              );
+            }
+            break;
+          }
 
           const deal = await bitrixAPI.getDeal(dealID);
           const contaRosas = deal[bitrixVariables.negocio.conta] === "727";
 
           if (tipoDePagamento === "Entrada") {
+            const parcelamento = deal[bitrixVariables.negocio.parcelamento];
+            let titulo = deal.TITLE;
+
+            if (titulo.split(" | ")[1]) {
+              titulo = titulo.split(" | ")[0];
+            }
+
             await bitrixAPI.addDetails(dealID, {
               [bitrixVariables.negocio.entrada_paga]: "1",
             });
+
+            if (parcelamento === "717") {
+              await bitrixAPI.addDetails(dealID, {
+                TITLE: `${titulo} | 1ª Parcela`,
+              });
+            }
 
             await bitrixAPI.addLog(
               dealID,
@@ -37,7 +102,7 @@ AssasRouter.post("/assas", async (req: Request, res: Response) => {
               "deal"
             );
 
-            if(deal[bitrixVariables.negocio.parcelamento] === "717") {
+            if (deal[bitrixVariables.negocio.parcelamento] === "717") {
               await bitrixAPI.updateStage(
                 dealID,
                 contaRosas ? Stages.NOVO : Stages.GERAR_NOTA_FISCAL
@@ -70,54 +135,118 @@ AssasRouter.post("/assas", async (req: Request, res: Response) => {
           }
         }
         break;
-      case "PAYMENT_RECEIVED": // Aguardando pagamento (Parcela handler)
+      case "PAYMENT_RECEIVED":
         {
-          const [dealID, tipoDePagamento, conta] =
+          const [dealID, tipoDePagamento, _] =
             req.body.payment.externalReference.split("||");
 
-          if (tipoDePagamento !== "Parcela") break;
+          if (tipoDePagamento === "Parcela") {
+            const [dealID, tipoDePagamento, conta] =
+              req.body.payment.externalReference.split("||");
 
-          const [id, value] = conta.split("-");
-          const assasAPI = new AssasAPI({ VALUE: value, ID: id });
-          const parcelamento = req.body.payment.installment;
-          const cobrancas = await assasAPI.getParcelamento_cobrancas(
-            parcelamento
-          );
+            if (tipoDePagamento !== "Parcela") break;
 
-          const ultimaParcelaPaga = req.body.payment.description.split(" ")[1];
+            const [id, value] = conta.split("-");
+            const assasAPI = new AssasAPI({ VALUE: value, ID: id });
+            const parcelamento = req.body.payment.installment;
+            const cobrancas = await assasAPI.getParcelamento_cobrancas(
+              parcelamento
+            );
 
-          await bitrixAPI.addDetails(dealID, {
-            [bitrixVariables.negocio.ultima_parcela_paga]: ultimaParcelaPaga,
-          });
+            const ultimaParcelaPaga =
+              req.body.payment.description.split(" ")[1];
 
-          const proximaCobranca = cobrancas.find(
-            (cobranca: any) =>
-              +cobranca.description.split(" ")[1] === +ultimaParcelaPaga + 1
-          );
+            await bitrixAPI.addDetails(dealID, {
+              [bitrixVariables.negocio.ultima_parcela_paga]: ultimaParcelaPaga,
+            });
+
+            const proximaCobranca = cobrancas.find(
+              (cobranca: any) =>
+                +cobranca.description.split(" ")[1] === +ultimaParcelaPaga + 1
+            );
+
+            const deal = await bitrixAPI.getDeal(dealID);
+            const contaRosas = deal[bitrixVariables.negocio.conta] === "727";
+
+            await bitrixAPI.addLog(
+              dealID,
+              "Pagamento efetuado!",
+              `Pagamento da ${ultimaParcelaPaga}ª parcela foi efetuado pelo cliente!`,
+              "check",
+              "deal"
+            );
+
+            if (proximaCobranca) {
+              await bitrixAPI.addDetails(dealID, {
+                [bitrixVariables.negocio
+                  .ultima_parcela_paga]: `${ultimaParcelaPaga}`,
+                SOURCE_DESCRIPTION: `boleto: ${proximaCobranca.bankSlipUrl}\npagamento: ${proximaCobranca.invoiceUrl}`,
+                [bitrixVariables.negocio.cobrancaID]: proximaCobranca.id,
+              });
+
+              await bitrixAPI.updateStage(
+                dealID,
+                contaRosas
+                  ? Stages.AGUARDANDO_PAGAMENTO
+                  : Stages.GERAR_NOTA_FISCAL
+              );
+            }
+            break;
+          }
 
           const deal = await bitrixAPI.getDeal(dealID);
           const contaRosas = deal[bitrixVariables.negocio.conta] === "727";
 
-          await bitrixAPI.addLog(
-            dealID,
-            "Pagamento efetuado!",
-            `Pagamento da ${ultimaParcelaPaga}ª parcela foi efetuado pelo cliente!`,
-            "check",
-            "deal"
-          );
+          if (tipoDePagamento === "Entrada") {
+            const parcelamento = deal[bitrixVariables.negocio.parcelamento];
+            const titulo = deal.TITLE;
 
-          if (proximaCobranca) {
             await bitrixAPI.addDetails(dealID, {
-              [bitrixVariables.negocio
-                .ultima_parcela_paga]: `${ultimaParcelaPaga}`,
-              SOURCE_DESCRIPTION: `boleto: ${proximaCobranca.bankSlipUrl}\npagamento: ${proximaCobranca.invoiceUrl}`,
-              [bitrixVariables.negocio.cobrancaID]: proximaCobranca.id,
+              [bitrixVariables.negocio.entrada_paga]: "1",
             });
+
+            if (parcelamento === "717") {
+              await bitrixAPI.addDetails(dealID, {
+                TITLE: `${titulo} | 1ª Parcela`,
+              });
+            }
+
+            await bitrixAPI.addLog(
+              dealID,
+              "Pagamento efetuado!",
+              `Pagamento da entrada foi efetuado pelo cliente!`,
+              "check",
+              "deal"
+            );
+
+            if (deal[bitrixVariables.negocio.parcelamento] === "717") {
+              await bitrixAPI.updateStage(
+                dealID,
+                contaRosas ? Stages.NOVO : Stages.GERAR_NOTA_FISCAL
+              );
+              break;
+            }
+
+            await bitrixAPI.updateStage(
+              dealID,
+              contaRosas ? Stages.SOLICITAR_PAGAMENTO : Stages.GERAR_NOTA_FISCAL
+            );
+            break;
+          }
+
+          if (tipoDePagamento === "A vista") {
+            await bitrixAPI.addLog(
+              dealID,
+              "Pagamento efetuado!",
+              `Pagamento da cobrança foi efetuado à vista pelo cliente!`,
+              "check",
+              "deal"
+            );
 
             await bitrixAPI.updateStage(
               dealID,
               contaRosas
-                ? Stages.AGUARDANDO_PAGAMENTO
+                ? Stages.FIM_CONTA_SECUNDARIA
                 : Stages.GERAR_NOTA_FISCAL
             );
           }

@@ -22,9 +22,10 @@ export async function paymentHandler(
     // em 10, 12 ou 18 vezes
     if (!entradaPaga) {
       const result = await assasAPI.cobranca({
-        billingType: "UNDEFINED",
+        billingType: "BOLETO",
         dueDate: dueDateHandler(5),
         value: +deal.OPPORTUNITY,
+        description: deal[bitrixVariables.negocio.descricao],
         customer: {
           id: bitrixContact[
             assasAPI.account === "Rozza"
@@ -46,6 +47,7 @@ export async function paymentHandler(
       billingType: "BOLETO",
       dueDate: dueDateHandler(5),
       installmentValue: valorParcela,
+      description: deal[bitrixVariables.negocio.descricao],
       customer: {
         id: bitrixContact[
           assasAPI.account === "Rozza"
@@ -69,9 +71,10 @@ export async function paymentHandler(
     // 6 vezes com ou sem pesquisa
     if (!entradaPaga) {
       const result = await assasAPI.cobranca({
-        billingType: "UNDEFINED",
+        billingType: "BOLETO",
         dueDate: dueDateHandler(5),
         value: +deal.OPPORTUNITY,
+        description: deal[bitrixVariables.negocio.descricao],
         customer: {
           id: bitrixContact[
             assasAPI.account === "Rozza"
@@ -90,12 +93,16 @@ export async function paymentHandler(
     }
 
     if (parcelamento.ID === "715") {
-      const etapa = etapaHandler(+deal[bitrixVariables.negocio.etapa_atual], "715");
+      const etapa = etapaHandler(
+        +deal[bitrixVariables.negocio.etapa_atual],
+        "715"
+      );
 
       const result = await assasAPI.pagamentoParcelado({
         billingType: "BOLETO",
         dueDate: dueDateHandler(etapa.vencimento),
         installmentValue: valorParcela,
+        description: deal[bitrixVariables.negocio.descricao],
         customer: {
           id: bitrixContact[
             assasAPI.account === "Rozza"
@@ -117,12 +124,16 @@ export async function paymentHandler(
 
     if (parcelamento.ID === "717") {
       // com pesquisa
-      const etapa = etapaHandler(+deal[bitrixVariables.negocio.etapa_atual], "717");
+      const etapa = etapaHandler(
+        +deal[bitrixVariables.negocio.etapa_atual],
+        "717"
+      );
 
       const result = await assasAPI.pagamentoParcelado({
         billingType: "BOLETO",
         dueDate: dueDateHandler(etapa.vencimento),
         installmentValue: valorParcela,
+        description: deal[bitrixVariables.negocio.descricao],
         customer: {
           id: bitrixContact[
             assasAPI.account === "Rozza"
@@ -146,9 +157,10 @@ export async function paymentHandler(
   if (parcelamento?.ID.match(/^(725)$/)) {
     // À vista
     const result = await assasAPI.cobranca({
-      billingType: "UNDEFINED",
+      billingType: "BOLETO",
       dueDate: dueDateHandler(5),
       value: +deal.OPPORTUNITY,
+      description: deal[bitrixVariables.negocio.descricao],
       customer: {
         id: bitrixContact[
           assasAPI.account === "Rozza"
