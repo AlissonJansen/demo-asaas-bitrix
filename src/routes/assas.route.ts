@@ -317,8 +317,6 @@ AssasRouter.post("/assas", async (req: Request, res: Response) => {
           let mensagem = "";
 
           const pagamento = await assasAPI.getBill(pagamentoID);
-          const cobranca = await bitrixAPI.getDeal(dealID);
-          const parcelamento = cobranca[bitrixVariables.negocio.parcelamento];
 
           if (tipoDePagamento === "Parcela") {
             mensagem = `Nota fiscal referente à ${
