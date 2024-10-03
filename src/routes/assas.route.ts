@@ -8,6 +8,7 @@ import { dotenvConfig } from "../config/env.config";
 const AssasRouter = Router();
 const bitrixAPI = new BitrixAPI();
 let lastRequest = "";
+let lastID = "";
 let seconds = 0;
 
 // Function to start counting
@@ -20,7 +21,7 @@ const startCounting = () => {
   setTimeout(() => {
     seconds = 0;
     clearInterval(interval);
-  }, 25000);
+  }, 15000);
 };
 
 AssasRouter.post("/assas", async (req: Request, res: Response) => {
