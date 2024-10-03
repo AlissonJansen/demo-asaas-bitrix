@@ -7,10 +7,32 @@ import { dotenvConfig } from "../config/env.config";
 
 const AssasRouter = Router();
 const bitrixAPI = new BitrixAPI();
+let lastRequest = "";
+let seconds = 0;
+
+// Function to start counting
+const startCounting = () => {
+  const interval = setInterval(() => {
+    seconds += 1;
+  }, 1000);
+
+  // Stop after a certain time (optional)
+  setTimeout(() => {
+    seconds = 0;
+    clearInterval(interval);
+  }, 25000);
+};
 
 AssasRouter.post("/assas", async (req: Request, res: Response) => {
   if (req.headers["asaas-access-token"] !== dotenvConfig.ASSAS.WEBHOOK_TOKEN)
     return res.status(400).send("Unauthorized");
+
+  if (lastRequest === req.body.event && seconds > 0) {
+    return res.status(200).send("Requisição já executada");
+  }
+
+  lastRequest = req.body.event;
+  startCounting();
 
   try {
     switch (req.body.event) {
