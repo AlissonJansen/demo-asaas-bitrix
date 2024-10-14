@@ -102,7 +102,7 @@ export async function paymentHandler(
         billingType: "BOLETO",
         dueDate: dueDateHandler(etapa.vencimento),
         installmentValue: valorParcela,
-        description: deal[bitrixVariables.negocio.descricao],
+        description: `${deal[bitrixVariables.negocio.descricao]}|${etapa.parcelasAnteriores}`,
         customer: {
           id: bitrixContact[
             assasAPI.account === "Rozza"
@@ -133,7 +133,7 @@ export async function paymentHandler(
         billingType: "BOLETO",
         dueDate: dueDateHandler(etapa.vencimento),
         installmentValue: valorParcela,
-        description: deal[bitrixVariables.negocio.descricao],
+        description: `${deal[bitrixVariables.negocio.descricao]}|${etapa.parcelasAnteriores}`,
         customer: {
           id: bitrixContact[
             assasAPI.account === "Rozza"

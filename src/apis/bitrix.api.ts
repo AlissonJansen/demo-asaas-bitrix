@@ -143,8 +143,10 @@ export class BitrixAPI {
     let source_description = [];
 
     for (let key in fields) {
-      if(fields[key] === undefined) continue;
-      source_description.push(`&fields[${key}]=${encodeURIComponent(fields[key])}`);
+      if (fields[key] === undefined) continue;
+      source_description.push(
+        `&fields[${key}]=${encodeURIComponent(fields[key])}`
+      );
     }
 
     const response = await fetch(
@@ -295,9 +297,10 @@ export class BitrixAPI {
       method: "GET",
     };
 
-    const contaID = contaWallet === dotenvConfig.ASSAS.ROSAS.WALLET_ID
-      ? bitrixVariables.contato.rosas_assasID
-      : bitrixVariables.contato.rozza_assasID;
+    const contaID =
+      contaWallet === dotenvConfig.ASSAS.ROSAS.WALLET_ID
+        ? bitrixVariables.contato.rosas_assasID
+        : bitrixVariables.contato.rozza_assasID;
 
     const response = await fetch(
       `https://${dotenvConfig.BITRIX.ID}.bitrix24.com.br/rest/crm.contact.update/` +

@@ -9,6 +9,7 @@ export const bitrixVariables = {
     rozza_assasID: "UF_CRM_1726155137015",
   },
   negocio: {
+    pausa: "UF_CRM_1728400132889",
     descricao: "UF_CRM_1726164261024",
     observacoes: "UF_CRM_1726164278069",
     conta: "UF_CRM_1726942846255",
@@ -19,5 +20,7 @@ export const bitrixVariables = {
     ultima_parcela_paga: "UF_CRM_1727100774677",
     entrada_paga: "UF_CRM_1727109596567",
     etapa_atual: "UF_CRM_1727712069953",
+    nota_requisitada: "UF_CRM_1728492786413",
+    pagamento_requisitado: "UF_CRM_1728492762385"
   },
 };

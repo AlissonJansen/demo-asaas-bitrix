@@ -116,9 +116,21 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
     return res.status(401).send("Unauthorized");
 
   const id = req.body.data.FIELDS.ID;
-  const deal = await bitrixAPI.getDeal(id);
+  const deal = await bitrixAPI.getDeal(id).catch((e) => e);
+  if (!deal)
+    return res
+      .status(400)
+      .send("Houve um erro buscando o deal no bitrix" + deal);
+
   if (!deal.CONTACT_ID) return res.status(200).send("ok");
-  const bitrixContact = await bitrixAPI.getCustomer(deal.CONTACT_ID);
+  const bitrixContact = await bitrixAPI
+    .getCustomer(deal.CONTACT_ID)
+    .catch((e) => e);
+  if (!bitrixContact)
+    return res
+      .status(400)
+      .send("Houve um erro buscando o cliente no bitrix" + deal);
+
   const conta = contas.find(
     (conta) => conta.ID === deal[bitrixVariables.negocio.conta]
   );
@@ -130,28 +142,54 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
 
   try {
     switch (deal.STAGE_ID) {
-      case Stages.SOLICITAR_PAGAMENTO: // Solicitar pagamento
-        if (!asaasCustomer) {
-          await CreateMissingAsaasCustomer(bitrixContact, assasAPI, deal);
+      case Stages.NOVO: // Solicitar pagamento
+        {
+          const pausa = +deal[bitrixVariables.negocio.pausa];
+
+          if (pausa) break;
+
+          await bitrixAPI.addDetails(id, {
+            [bitrixVariables.negocio.pausa]: "1",
+            [bitrixVariables.negocio.pagamento_requisitado]: "0",
+          });
         }
+        break;
+      case Stages.SOLICITAR_PAGAMENTO: // Solicitar pagamento
+        {
+          const pagamentoRequisitado =
+            deal[bitrixVariables.negocio.pagamento_requisitado];
 
-        const result = await paymentHandler(deal, bitrixContact, assasAPI);
+          if (+pagamentoRequisitado) break;
 
-        await bitrixAPI.updateStage(id, Stages.AGUARDANDO_PAGAMENTO);
+          // {
+          //   await bitrixAPI.updateStage(id, Stages.AGUARDANDO_PAGAMENTO);
+          //   break;
+          // };
 
-        await bitrixAPI.addDetails(id, {
-          SOURCE_DESCRIPTION: `boleto: ${result.bankSlipUrl}\npagamento: ${result.invoiceUrl}`,
-          [bitrixVariables.negocio.clienteID]: result.customer,
-          [bitrixVariables.negocio.cobrancaID]: result.id,
-        });
+          if (!asaasCustomer) {
+            await CreateMissingAsaasCustomer(bitrixContact, assasAPI, deal);
+          }
 
-        await bitrixAPI.addLog(
-          id,
-          "Cobrança criada!",
-          `Cobrança criada e enviada ao cliente!`,
-          "check",
-          "deal"
-        );
+          const result = await paymentHandler(deal, bitrixContact, assasAPI);
+
+          await bitrixAPI.updateStage(id, Stages.AGUARDANDO_PAGAMENTO);
+
+          await bitrixAPI.addDetails(id, {
+            SOURCE_DESCRIPTION: `boleto: ${result.bankSlipUrl}\npagamento: ${result.invoiceUrl}`,
+            [bitrixVariables.negocio.clienteID]: result.customer,
+            [bitrixVariables.negocio.cobrancaID]: result.id,
+            [bitrixVariables.negocio.pausa]: "0",
+            [bitrixVariables.negocio.pagamento_requisitado]: "1",
+          });
+
+          await bitrixAPI.addLog(
+            id,
+            "Cobrança criada!",
+            `Cobrança criada e enviada ao cliente!`,
+            "check",
+            "deal"
+          );
+        }
         break;
       case Stages.AGUARDANDO_PAGAMENTO:
         {
@@ -160,6 +198,27 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
           );
           const [dealID, tipoDePagamento, conta] =
             assasPayment.externalReference.split("||");
+          const paused = deal[bitrixVariables.negocio.pausa];
+          const entradaPaga = +deal[bitrixVariables.negocio.entrada_paga];
+          const pagamentoRequisitado =
+            +deal[bitrixVariables.negocio.pagamento_requisitado];
+
+          if (+paused) {
+            await bitrixAPI.updateStage(dealID, Stages.NOVO);
+            break;
+          }
+
+          // if (
+          //   tipoDePagamento === "Entrada" &&
+          //   entradaPaga &&
+          //   !pagamentoRequisitado
+          // ) {
+          //   setTimeout(() => {
+          //     bitrixAPI.updateStage(dealID, Stages.SOLICITAR_PAGAMENTO);
+          //   }, 15000);
+
+          //   break;
+          // }
 
           if (tipoDePagamento === "A vista" || tipoDePagamento === "Entrada")
             break;
@@ -227,7 +286,7 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
           const [dealID, tipoDePagamento, conta] =
             assasPayment.externalReference.split("||");
 
-          const result = await assasAPI.requestInvoice({
+          await assasAPI.requestInvoice({
             customer: asaasCustomer.id,
             deductions: 0.2,
             effectiveDate: assasPayment.dateCreated,
@@ -239,7 +298,7 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
             municipalServiceCode: "101",
             value: assasPayment.value,
             externalReference: `${dealID}||${tipoDePagamento}||${conta}`,
-            serviceDescription: deal[bitrixVariables.negocio.descricao],
+            serviceDescription: assasPayment.description,
             taxes: {
               retainIss: false,
               iss: 2,
@@ -265,18 +324,37 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
               break;
             }
 
-            await bitrixAPI.updateStage(dealID, Stages.SOLICITAR_PAGAMENTO);
+            await bitrixAPI.addDetails(dealID, {
+              [bitrixVariables.negocio.pagamento_requisitado]: "0",
+            });
+
+            await bitrixAPI.updateStage(dealID, Stages.NOVO);
             break;
           }
 
-          const parcelaPaga = deal[bitrixVariables.negocio.ultima_parcela_paga];
-          const parcelasAPagar = assasPayment.description
-            .split(" ")[3]
-            .replace(".", "");
-          const tipoDeParcelamento = deal[bitrixVariables.negocio.parcelamento];
-          const seisVezes = tipoDeParcelamento.match(/^(715|717)$/);
+          const payment = await assasAPI.getBill(
+            deal[bitrixVariables.negocio.cobrancaID]
+          );
+          const cobrancas_do_parcelamento =
+            await assasAPI.getParcelamento_cobrancas(payment.installment);
+          const ultimaParcelaPaga = payment.description.split(" ")[1];
 
-          if (parcelaPaga === parcelasAPagar && seisVezes) break;
+          const proximaCobranca = cobrancas_do_parcelamento.find(
+            (cobranca: any) => {
+              return (
+                +cobranca.description.split(" ")[1] === +ultimaParcelaPaga + 1
+              );
+            }
+          );
+
+          if (proximaCobranca) {
+            await bitrixAPI.addDetails(dealID, {
+              [bitrixVariables.negocio
+                .ultima_parcela_paga]: `${ultimaParcelaPaga}`,
+              SOURCE_DESCRIPTION: `boleto: ${proximaCobranca.bankSlipUrl}\npagamento: ${proximaCobranca.invoiceUrl}`,
+              [bitrixVariables.negocio.cobrancaID]: proximaCobranca.id,
+            });
+          }
 
           await bitrixAPI.updateStage(dealID, Stages.AGUARDANDO_PAGAMENTO);
         }
