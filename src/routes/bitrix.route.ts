@@ -208,18 +208,6 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
             break;
           }
 
-          // if (
-          //   tipoDePagamento === "Entrada" &&
-          //   entradaPaga &&
-          //   !pagamentoRequisitado
-          // ) {
-          //   setTimeout(() => {
-          //     bitrixAPI.updateStage(dealID, Stages.SOLICITAR_PAGAMENTO);
-          //   }, 15000);
-
-          //   break;
-          // }
-
           if (tipoDePagamento === "A vista" || tipoDePagamento === "Entrada")
             break;
 

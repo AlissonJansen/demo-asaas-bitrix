@@ -27,7 +27,7 @@ AssasRouter.post("/assas", async (req: Request, res: Response) => {
             const assasAPI = new AssasAPI({ VALUE: value, ID: id });
             const parcelamento = req.body.payment.installment;
             const parcelasAnteriores =
-              req.body.payment.description.split("|")[1];
+              +req.body.payment.description.split("|")[1];
             const cobrancas = await assasAPI.getParcelamento_cobrancas(
               parcelamento
             );
@@ -104,17 +104,13 @@ AssasRouter.post("/assas", async (req: Request, res: Response) => {
               "deal"
             );
 
-            if (deal[bitrixVariables.negocio.parcelamento] === "717") {
-              await bitrixAPI.updateStage(
-                dealID,
-                contaRosas ? Stages.NOVO : Stages.GERAR_NOTA_FISCAL
-              );
-              break;
-            }
+            await bitrixAPI.addDetails(dealID, {
+              [bitrixVariables.negocio.pagamento_requisitado]: "0",
+            });
 
             await bitrixAPI.updateStage(
               dealID,
-              contaRosas ? Stages.SOLICITAR_PAGAMENTO : Stages.GERAR_NOTA_FISCAL
+              contaRosas ? Stages.NOVO : Stages.GERAR_NOTA_FISCAL
             );
             break;
           }
@@ -141,6 +137,8 @@ AssasRouter.post("/assas", async (req: Request, res: Response) => {
         {
           const [dealID, tipoDePagamento, _] =
             req.body.payment.externalReference.split("||");
+          const deal = await bitrixAPI.getDeal(dealID);
+          const contaRosas = deal[bitrixVariables.negocio.conta] === "727";
 
           if (tipoDePagamento === "Parcela") {
             const [dealID, tipoDePagamento, conta] =
@@ -150,7 +148,7 @@ AssasRouter.post("/assas", async (req: Request, res: Response) => {
             const assasAPI = new AssasAPI({ VALUE: value, ID: id });
             const parcelamento = req.body.payment.installment;
             const parcelasAnteriores =
-              req.body.payment.description.split("|")[1];
+              +req.body.payment.description.split("|")[1];
             const cobrancas = await assasAPI.getParcelamento_cobrancas(
               parcelamento
             );
@@ -163,43 +161,39 @@ AssasRouter.post("/assas", async (req: Request, res: Response) => {
             });
 
             const proximaCobranca = cobrancas.find((cobranca: any) => {
-              +cobranca.description.split(" ")[1] === +ultimaParcelaPaga + 1;
+              return (
+                +cobranca.description.split(" ")[1] === +ultimaParcelaPaga + 1
+              );
             });
-
-            const deal = await bitrixAPI.getDeal(dealID);
-            const contaRosas = deal[bitrixVariables.negocio.conta] === "727";
 
             await bitrixAPI.addLog(
               dealID,
               "Pagamento efetuado!",
               `Pagamento da ${
                 parcelasAnteriores
-                  ? +ultimaParcelaPaga + +parcelasAnteriores
+                  ? +ultimaParcelaPaga + parcelasAnteriores
                   : +ultimaParcelaPaga
               }ª parcela foi efetuado pelo cliente!`,
               "check",
               "deal"
             );
 
-            if (proximaCobranca && contaRosas) {
-              await bitrixAPI.updateStage(dealID, Stages.AGUARDANDO_PAGAMENTO);
+            if (!contaRosas) {
+              await bitrixAPI.updateStage(dealID, Stages.GERAR_NOTA_FISCAL);
+              break;
+            }
 
+            if (proximaCobranca) {
               await bitrixAPI.addDetails(dealID, {
                 [bitrixVariables.negocio
                   .ultima_parcela_paga]: `${ultimaParcelaPaga}`,
                 [bitrixVariables.negocio.cobrancaID]: proximaCobranca.id,
                 SOURCE_DESCRIPTION: `boleto: ${proximaCobranca.bankSlipUrl}\npagamento: ${proximaCobranca.invoiceUrl}`,
               });
-              break;
             }
-
-            await bitrixAPI.updateStage(dealID, Stages.GERAR_NOTA_FISCAL);
 
             break;
           }
-
-          const deal = await bitrixAPI.getDeal(dealID);
-          const contaRosas = deal[bitrixVariables.negocio.conta] === "727";
 
           if (tipoDePagamento === "Entrada") {
             const parcelamento = deal[bitrixVariables.negocio.parcelamento];
@@ -227,17 +221,13 @@ AssasRouter.post("/assas", async (req: Request, res: Response) => {
               "deal"
             );
 
-            if (deal[bitrixVariables.negocio.parcelamento] === "717") {
-              await bitrixAPI.updateStage(
-                dealID,
-                contaRosas ? Stages.NOVO : Stages.GERAR_NOTA_FISCAL
-              );
-              break;
-            }
+            await bitrixAPI.addDetails(dealID, {
+              [bitrixVariables.negocio.pagamento_requisitado]: "0",
+            });
 
             await bitrixAPI.updateStage(
               dealID,
-              contaRosas ? Stages.SOLICITAR_PAGAMENTO : Stages.GERAR_NOTA_FISCAL
+              contaRosas ? Stages.NOVO : Stages.GERAR_NOTA_FISCAL
             );
             break;
           }
