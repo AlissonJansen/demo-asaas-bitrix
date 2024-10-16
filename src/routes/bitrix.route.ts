@@ -106,7 +106,7 @@ bitrixRouter.post(`/bitrix/contacts`, async (req: Request, res: Response) => {
       return res.status(200).send("ok");
     } catch (e) {
       console.log(e);
-      return res.status(400).send(e);
+      return res.status(204).send(e);
     }
   }
 });
@@ -119,7 +119,7 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
   const deal = await bitrixAPI.getDeal(id).catch((e) => e);
   if (!deal)
     return res
-      .status(400)
+      .status(204)
       .send("Houve um erro buscando o deal no bitrix" + deal);
 
   if (!deal.CONTACT_ID) return res.status(200).send("ok");
@@ -128,7 +128,7 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
     .catch((e) => e);
   if (!bitrixContact)
     return res
-      .status(400)
+      .status(204)
       .send("Houve um erro buscando o cliente no bitrix" + deal);
 
   const conta = contas.find(
@@ -354,7 +354,7 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
     return res.status(200).send("ok");
   } catch (e) {
     console.log(e);
-    return res.status(400).send(e);
+    return res.status(204).send(e);
   }
 });
 
