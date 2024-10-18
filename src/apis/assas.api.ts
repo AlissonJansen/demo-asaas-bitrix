@@ -15,7 +15,7 @@ export class AssasAPI {
   private readonly API_KEY: string;
   readonly account: string;
 
-  private readonly url = "https://sandbox.asaas.com/api/v3";
+  private readonly url = "https://api.asaas.com/v3";
   private readonly bitrixAPI = new BitrixAPI();
 
   async findCustomerByEmail(email: string): Promise<any> {
