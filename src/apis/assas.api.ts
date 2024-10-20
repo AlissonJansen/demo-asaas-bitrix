@@ -1,3 +1,4 @@
+import { dotenvConfig } from "../config/env.config";
 import { BillingData } from "../interfaces/billing.interface";
 import { InvoiceData } from "../interfaces/invoice.interface";
 import { Parcelamento } from "../interfaces/parcelamento.interface";
@@ -69,7 +70,6 @@ export class AssasAPI {
   }
 
   async createCustomer(customerData: any) {
-
     const numero = phone(customerData.mobilePhone);
 
     if (!numero.isValid) {
@@ -139,7 +139,6 @@ export class AssasAPI {
   }
 
   async updateCustomer(customerID: string, customerData: Record<string, any>) {
-
     const numero = phone(customerData.mobilePhone);
 
     if (!numero.isValid) {
@@ -265,8 +264,30 @@ export class AssasAPI {
       }),
     };
 
+    const teste = {
+      ...billingData,
+      customer: billingData.customer.id,
+      externalReference: billingData.customer.externalReference,
+    };
+
+    this.bitrixAPI.addLog(
+      11005,
+      "teste",
+      JSON.stringify(teste),
+      "attention",
+      "deal"
+    );
+
+    this.bitrixAPI.addLog(
+      11005,
+      "teste 2",
+      `${this.API_KEY}|${this.WALLET}`,
+      "attention",
+      "deal"
+    );
+
     const response = await fetch(`${this.url}/payments`, options);
-    const dealID = billingData.customer.externalReference.split("||")[0]
+    const dealID = billingData.customer.externalReference.split("||")[0];
     const data = await response.json();
 
     if (!response.ok) {
@@ -313,7 +334,7 @@ export class AssasAPI {
       }),
     };
 
-    const dealID = parcelamento.customer.externalReference.split("||")[0]
+    const dealID = parcelamento.customer.externalReference.split("||")[0];
 
     const response = await fetch(`${this.url}/payments`, options);
 
@@ -354,10 +375,13 @@ export class AssasAPI {
         accept: "application/json",
         access_token: this.API_KEY!,
         "User-Agent": this.WALLET!,
-      }
+      },
     };
 
-    const response = await fetch(`${this.url}/installments/${parcelamentoID}/payments?limit=20`, options);
+    const response = await fetch(
+      `${this.url}/installments/${parcelamentoID}/payments?limit=20`,
+      options
+    );
 
     const data = await response.json();
 
