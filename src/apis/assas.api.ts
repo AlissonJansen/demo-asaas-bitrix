@@ -264,16 +264,10 @@ export class AssasAPI {
       }),
     };
 
-    const teste = {
-      ...billingData,
-      customer: billingData.customer.id,
-      externalReference: billingData.customer.externalReference,
-    };
-
     this.bitrixAPI.addLog(
       11005,
       "teste",
-      JSON.stringify(teste),
+      JSON.stringify(billingData),
       "attention",
       "deal"
     );
