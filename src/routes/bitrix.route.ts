@@ -161,11 +161,6 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
 
           if (+pagamentoRequisitado) break;
 
-          // {
-          //   await bitrixAPI.updateStage(id, Stages.AGUARDANDO_PAGAMENTO);
-          //   break;
-          // };
-
           if (!asaasCustomer) {
             await CreateMissingAsaasCustomer(bitrixContact, assasAPI, deal);
           }
