@@ -155,17 +155,6 @@ export async function paymentHandler(
   }
 
   if (parcelamento?.ID.match(/^(725)$/)) {
-
-    const bitrixAPI = new BitrixAPI();
-
-    bitrixAPI.addLog(
-      11005,
-      "teste",
-      assasAPI.account,
-      "attention",
-      "deal"
-    );
-    
     // À vista
     const result = await assasAPI.cobranca({
       billingType: "BOLETO",

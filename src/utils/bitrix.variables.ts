@@ -5,8 +5,8 @@ export const bitrixVariables = {
     province: "UF_CRM_1726154997143", // bairro
     addressNumber: "UF_CRM_1726155013408",
     cep: "UF_CRM_1726154983000",
-    rosas_assasID: "UF_CRM_1726155161162",
-    rozza_assasID: "UF_CRM_1726155137015",
+    rosas_assasID: "UF_CRM_1726155137015",
+    rozza_assasID: "UF_CRM_1726155161162",
   },
   negocio: {
     pausa: "UF_CRM_1728400132889",

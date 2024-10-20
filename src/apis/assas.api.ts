@@ -264,21 +264,6 @@ export class AssasAPI {
       }),
     };
 
-    this.bitrixAPI.addLog(
-      11005,
-      "teste",
-      JSON.stringify(billingData),
-      "attention",
-      "deal"
-    );
-
-    this.bitrixAPI.addLog(
-      11005,
-      "teste 2",
-      `${this.API_KEY}|${this.WALLET}`,
-      "attention",
-      "deal"
-    );
 
     const response = await fetch(`${this.url}/payments`, options);
     const dealID = billingData.customer.externalReference.split("||")[0];
