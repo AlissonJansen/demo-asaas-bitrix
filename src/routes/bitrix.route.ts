@@ -27,8 +27,8 @@ bitrixRouter.post(`/bitrix/contacts`, async (req: Request, res: Response) => {
     const assasAPI = new AssasAPI(contas[i]);
     const walletID =
       assasAPI.account === "Rozza"
-        ? dotenvConfig.ASSAS.ROSAS.WALLET_ID
-        : dotenvConfig.ASSAS.ROZZA.WALLET_ID;
+        ? dotenvConfig.ASSAS.ROZZA.WALLET_ID
+        : dotenvConfig.ASSAS.ROSAS.WALLET_ID;
 
     try {
       switch (req.body.event) {
