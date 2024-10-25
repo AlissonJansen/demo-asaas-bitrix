@@ -25,14 +25,16 @@ bitrixRouter.post(`/bitrix/contacts`, async (req: Request, res: Response) => {
 
   for (let i = 0; contas.length > i; i++) {
     const assasAPI = new AssasAPI(contas[i]);
+    const contaAtual = contas[i];
     const walletID =
-      assasAPI.account === "Rozza"
+      contaAtual.VALUE === "Rozza"
         ? dotenvConfig.ASSAS.ROZZA.WALLET_ID
         : dotenvConfig.ASSAS.ROSAS.WALLET_ID;
 
     try {
       switch (req.body.event) {
-        case "ONCRMCONTACTADD": // Adicionado
+        case "ONCRMCONTACTADD": {
+          const accountName = contas[i].VALUE;
           const novoCliente = await assasAPI.createCustomer({
             email: customer?.EMAIL?.[0].VALUE,
             mobilePhone: customer?.PHONE?.[0].VALUE,
@@ -54,12 +56,13 @@ bitrixRouter.post(`/bitrix/contacts`, async (req: Request, res: Response) => {
           await bitrixAPI.addLog(
             contactID,
             "Contato adicionado!",
-            `Contato adicionado na conta ${contas[i].VALUE} com sucesso!`,
+            `Contato adicionado na conta ${accountName} com sucesso!`,
             "check",
             "contact"
           );
           continue;
-        case "ONCRMCONTACTUPDATE": // Alterado
+        }
+        case "ONCRMCONTACTUPDATE": {
           const clienteRecebido = {
             email: customer?.EMAIL?.[0].VALUE,
             mobilePhone: customer?.PHONE?.[0].VALUE,
@@ -72,35 +75,38 @@ bitrixRouter.post(`/bitrix/contacts`, async (req: Request, res: Response) => {
             externalReference: contactID,
           };
 
-          const customerAsaasID = !i
-            ? customer[bitrixVariables.contato.rosas_assasID]
-            : customer[bitrixVariables.contato.rozza_assasID];
+          const customerAsaasID =
+            contaAtual.VALUE === "Rozza"
+              ? customer[bitrixVariables.contato.rozza_assasID]
+              : customer[bitrixVariables.contato.rosas_assasID];
 
-          if (!customerAsaasID) {
-            let clienteEncontradoNoAsaas = await assasAPI.findCustomerByEmail(
-              customer?.EMAIL?.[0].VALUE
-            );
+          // if (!customerAsaasID) {
+          //   let clienteEncontradoNoAsaas = await assasAPI.findCustomerByEmail(
+          //     customer?.EMAIL?.[0].VALUE
+          //   );
 
-            if (!clienteEncontradoNoAsaas) {
-              clienteEncontradoNoAsaas = await assasAPI.createCustomer(
-                clienteRecebido
-              );
-            }
+          //   if (!clienteEncontradoNoAsaas) {
+          //     clienteEncontradoNoAsaas = await assasAPI.createCustomer(
+          //       clienteRecebido
+          //     );
+          //   }
 
-            await bitrixAPI.addAssasID(
-              clienteEncontradoNoAsaas.externalReference,
-              clienteEncontradoNoAsaas.id,
-              walletID
-            );
+          //   await bitrixAPI.addAssasID(
+          //     clienteEncontradoNoAsaas.externalReference,
+          //     clienteEncontradoNoAsaas.id,
+          //     walletID
+          //   );
 
-            continue;
-          }
+          //   continue;
+          // }
 
           await assasAPI.updateCustomer(customerAsaasID, clienteRecebido);
           continue;
-        case "ONCRMCONTACTDELETE": // Deletado
+        }
+        case "ONCRMCONTACTDELETE": {
           await assasAPI.deleteCustomer(contactID);
           continue;
+        }
       }
 
       return res.status(200).send("ok");
