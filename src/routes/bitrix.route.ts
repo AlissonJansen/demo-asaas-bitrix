@@ -80,25 +80,25 @@ bitrixRouter.post(`/bitrix/contacts`, async (req: Request, res: Response) => {
               ? customer[bitrixVariables.contato.rozza_assasID]
               : customer[bitrixVariables.contato.rosas_assasID];
 
-          // if (!customerAsaasID) {
-          //   let clienteEncontradoNoAsaas = await assasAPI.findCustomerByEmail(
-          //     customer?.EMAIL?.[0].VALUE
-          //   );
+          if (!customerAsaasID) {
+            let clienteEncontradoNoAsaas = await assasAPI.findCustomerByEmail(
+              customer?.EMAIL?.[0].VALUE
+            );
 
-          //   if (!clienteEncontradoNoAsaas) {
-          //     clienteEncontradoNoAsaas = await assasAPI.createCustomer(
-          //       clienteRecebido
-          //     );
-          //   }
+            if (!clienteEncontradoNoAsaas) {
+              clienteEncontradoNoAsaas = await assasAPI.createCustomer(
+                clienteRecebido
+              );
+            }
 
-          //   await bitrixAPI.addAssasID(
-          //     clienteEncontradoNoAsaas.externalReference,
-          //     clienteEncontradoNoAsaas.id,
-          //     walletID
-          //   );
+            await bitrixAPI.addAssasID(
+              clienteEncontradoNoAsaas.externalReference,
+              clienteEncontradoNoAsaas.id,
+              walletID
+            );
 
-          //   continue;
-          // }
+            continue;
+          }
 
           await assasAPI.updateCustomer(customerAsaasID, clienteRecebido);
           continue;
