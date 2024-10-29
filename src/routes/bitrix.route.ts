@@ -102,13 +102,6 @@ bitrixRouter.post(`/bitrix/contacts`, async (req: Request, res: Response) => {
 
           await assasAPI.updateCustomer(customerAsaasID, clienteRecebido);
 
-          await bitrixAPI.addLog(
-            contactID,
-            "Cliente atualizado com sucesso!",
-            `Cliente atualizado na conta ${contaAtual.VALUE}`,
-            "check",
-            "contact"
-          );
           continue;
         }
         case "ONCRMCONTACTDELETE": {
