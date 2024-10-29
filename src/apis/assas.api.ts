@@ -12,11 +12,11 @@ export class AssasAPI {
     [this.API_KEY, this.WALLET, this.account] = accountHandler(conta);
   }
 
-  private readonly WALLET: string;
+  readonly WALLET: string;
   private readonly API_KEY: string;
   readonly account: string;
 
-  private readonly url = "https://api.asaas.com/v3";
+  private readonly url = dotenvConfig.ASSAS.DEV_ASAAS_URL;
   private readonly bitrixAPI = new BitrixAPI();
 
   async findCustomerByEmail(email: string): Promise<any> {
@@ -263,7 +263,7 @@ export class AssasAPI {
         externalReference: billingData.customer.externalReference,
       }),
     };
-
+    
 
     const response = await fetch(`${this.url}/payments`, options);
     const dealID = billingData.customer.externalReference.split("||")[0];

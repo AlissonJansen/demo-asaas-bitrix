@@ -1,12 +1,11 @@
 import { dotenvConfig } from "../config/env.config";
-import { Stages } from "../interfaces/stages";
 import { bitrixVariables } from "../utils/bitrix.variables";
 
 export class BitrixAPI {
   private bitrix_access_token =
-    "dd2ee366007139f9006d89e900000823a0ab07a0866f36907e25be2aae5c6a6880ba19";
+    "7f671f67007139f9006d89e900000823a0ab07951967bbc14ca93739606549b354b47b";
   private bitrix_refresh_token =
-    "cdad0a67007139f9006d89e900000823a0ab070eb122f2ac55b18326f4da3c3a62b6d9";
+    "6fe64667007139f9006d89e900000823a0ab07987a98bdbf297624ca47c2da907e47fd";
 
   private async reset_tokens() {
     const options: RequestInit = {
@@ -229,8 +228,6 @@ export class BitrixAPI {
     icon: "attention" | "info" | "check",
     entityType: "deal" | "contact"
   ) {
-    // 2 = deal
-    // 3 = contact
     await this.grantValidToken();
 
     const options: RequestInit = {

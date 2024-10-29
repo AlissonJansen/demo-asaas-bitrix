@@ -3,7 +3,6 @@ import { BitrixAPI } from "../apis/bitrix.api";
 import { AssasAPI } from "../apis/assas.api";
 import { dotenvConfig } from "../config/env.config";
 import { bitrixVariables } from "../utils/bitrix.variables";
-import { customerValidator } from "../validators/customer.validator";
 import { paymentHandler } from "../utils/payment.handler";
 import { Stages } from "../interfaces/stages";
 import { contas, parcelas } from "../utils/enums";
@@ -81,6 +80,7 @@ bitrixRouter.post(`/bitrix/contacts`, async (req: Request, res: Response) => {
               : customer[bitrixVariables.contato.rosas_assasID];
 
           if (!customerAsaasID) {
+            await new Promise((resolve) => setTimeout(resolve, 5000));
             let clienteEncontradoNoAsaas = await assasAPI.findCustomerByEmail(
               customer?.EMAIL?.[0].VALUE
             );
@@ -101,6 +101,14 @@ bitrixRouter.post(`/bitrix/contacts`, async (req: Request, res: Response) => {
           }
 
           await assasAPI.updateCustomer(customerAsaasID, clienteRecebido);
+
+          await bitrixAPI.addLog(
+            contactID,
+            "Cliente atualizado com sucesso!",
+            `Cliente atualizado na conta ${contaAtual.VALUE}`,
+            "check",
+            "contact"
+          );
           continue;
         }
         case "ONCRMCONTACTDELETE": {
@@ -111,7 +119,7 @@ bitrixRouter.post(`/bitrix/contacts`, async (req: Request, res: Response) => {
 
       return res.status(200).send("ok");
     } catch (e) {
-      console.log(e);
+      // console.log(e);
       return res.status(204).send(e);
     }
   }
@@ -129,7 +137,7 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
       .send("Houve um erro buscando o deal no bitrix" + deal);
 
   if (!deal.CONTACT_ID) return res.status(200).send("ok");
-  const bitrixContact = await bitrixAPI
+  let bitrixContact = await bitrixAPI
     .getCustomer(deal.CONTACT_ID)
     .catch((e) => e);
   if (!bitrixContact)
@@ -168,7 +176,21 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
           if (+pagamentoRequisitado) break;
 
           if (!asaasCustomer) {
+            await bitrixAPI.addLog(
+              id,
+              "Este Contato não existe no Asaas!",
+              `Criando contato no Asaas...`,
+              "info",
+              "deal"
+            );
+
             await CreateMissingAsaasCustomer(bitrixContact, assasAPI, deal);
+
+            await new Promise((resolve) => setTimeout(resolve, 5000));
+
+            bitrixContact = await bitrixAPI
+              .getCustomer(deal.CONTACT_ID)
+              .catch((e) => e);
           }
 
           const result = await paymentHandler(deal, bitrixContact, assasAPI);
