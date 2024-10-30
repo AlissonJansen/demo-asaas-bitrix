@@ -129,7 +129,10 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
       .status(204)
       .send("Houve um erro buscando o deal no bitrix" + deal);
 
-  if (!deal.CONTACT_ID) return res.status(200).send("ok");
+  if (!deal.CONTACT_ID)
+    return res
+      .status(204)
+      .send("não foi possível identificar o contato do bitrix");
   let bitrixContact = await bitrixAPI
     .getCustomer(deal.CONTACT_ID)
     .catch((e) => e);
@@ -138,8 +141,9 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
       .status(204)
       .send("Houve um erro buscando o cliente no bitrix" + deal);
 
+  const contaUsada = deal[bitrixVariables.negocio.conta];
   const conta = contas.find(
-    (conta) => conta.ID === deal[bitrixVariables.negocio.conta]
+    (conta) => conta.ID === contaUsada
   );
   if (!conta) return res.status(200).send("ok");
   const assasAPI = new AssasAPI(conta);
@@ -186,17 +190,17 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
               .catch((e) => e);
           }
 
-          const result = await paymentHandler(deal, bitrixContact, assasAPI);
+          // const result = await paymentHandler(deal, bitrixContact, assasAPI);
 
-          await bitrixAPI.updateStage(id, Stages.AGUARDANDO_PAGAMENTO);
+          // await bitrixAPI.updateStage(id, Stages.AGUARDANDO_PAGAMENTO);
 
-          await bitrixAPI.addDetails(id, {
-            SOURCE_DESCRIPTION: `boleto: ${result.bankSlipUrl}\npagamento: ${result.invoiceUrl}`,
-            [bitrixVariables.negocio.clienteID]: result.customer,
-            [bitrixVariables.negocio.cobrancaID]: result.id,
-            [bitrixVariables.negocio.pausa]: "0",
-            [bitrixVariables.negocio.pagamento_requisitado]: "1",
-          });
+          // await bitrixAPI.addDetails(id, {
+          //   SOURCE_DESCRIPTION: `boleto: ${result.bankSlipUrl}\npagamento: ${result.invoiceUrl}`,
+          //   [bitrixVariables.negocio.clienteID]: result.customer,
+          //   [bitrixVariables.negocio.cobrancaID]: result.id,
+          //   [bitrixVariables.negocio.pausa]: "0",
+          //   [bitrixVariables.negocio.pagamento_requisitado]: "1",
+          // });
 
           await bitrixAPI.addLog(
             id,
