@@ -190,17 +190,17 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
               .catch((e) => e);
           }
 
-          // const result = await paymentHandler(deal, bitrixContact, assasAPI);
+          const result = await paymentHandler(deal, bitrixContact, assasAPI);
 
-          // await bitrixAPI.updateStage(id, Stages.AGUARDANDO_PAGAMENTO);
+          await bitrixAPI.updateStage(id, Stages.AGUARDANDO_PAGAMENTO);
 
-          // await bitrixAPI.addDetails(id, {
-          //   SOURCE_DESCRIPTION: `boleto: ${result.bankSlipUrl}\npagamento: ${result.invoiceUrl}`,
-          //   [bitrixVariables.negocio.clienteID]: result.customer,
-          //   [bitrixVariables.negocio.cobrancaID]: result.id,
-          //   [bitrixVariables.negocio.pausa]: "0",
-          //   [bitrixVariables.negocio.pagamento_requisitado]: "1",
-          // });
+          await bitrixAPI.addDetails(id, {
+            SOURCE_DESCRIPTION: `boleto: ${result.bankSlipUrl}\npagamento: ${result.invoiceUrl}`,
+            [bitrixVariables.negocio.clienteID]: result.customer,
+            [bitrixVariables.negocio.cobrancaID]: result.id,
+            [bitrixVariables.negocio.pausa]: "0",
+            [bitrixVariables.negocio.pagamento_requisitado]: "1",
+          });
 
           await bitrixAPI.addLog(
             id,
