@@ -1,8 +1,5 @@
 import { AssasAPI } from "../apis/assas.api";
-import { BitrixAPI } from "../apis/bitrix.api";
-import { Stages } from "../interfaces/stages";
 import { bitrixVariables } from "./bitrix.variables";
-import { dueDateHandler } from "./dueDate.handler";
 import { contas, parcelas } from "./enums";
 import { etapaHandler } from "./etapa.handler";
 
@@ -23,7 +20,7 @@ export async function paymentHandler(
     if (!entradaPaga) {
       const result = await assasAPI.cobranca({
         billingType: "BOLETO",
-        dueDate: dueDateHandler(5),
+        dueDate: deal[bitrixVariables.negocio.vencimento].split("T")[0],
         value: +deal.OPPORTUNITY,
         description: deal[bitrixVariables.negocio.descricao],
         customer: {
@@ -45,7 +42,7 @@ export async function paymentHandler(
 
     const result = await assasAPI.pagamentoParcelado({
       billingType: "BOLETO",
-      dueDate: dueDateHandler(5),
+      dueDate: deal[bitrixVariables.negocio.vencimento].split("T")[0],
       installmentValue: valorParcela,
       description: deal[bitrixVariables.negocio.descricao],
       customer: {
@@ -72,7 +69,7 @@ export async function paymentHandler(
     if (!entradaPaga) {
       const result = await assasAPI.cobranca({
         billingType: "BOLETO",
-        dueDate: dueDateHandler(5),
+        dueDate: deal[bitrixVariables.negocio.vencimento].split("T")[0],
         value: +deal.OPPORTUNITY,
         description: deal[bitrixVariables.negocio.descricao],
         customer: {
@@ -93,6 +90,7 @@ export async function paymentHandler(
     }
 
     if (parcelamento.ID === "715") {
+      //sem pesquisa
       const etapa = etapaHandler(
         +deal[bitrixVariables.negocio.etapa_atual],
         "715"
@@ -100,7 +98,7 @@ export async function paymentHandler(
 
       const result = await assasAPI.pagamentoParcelado({
         billingType: "BOLETO",
-        dueDate: dueDateHandler(etapa.vencimento),
+        dueDate: deal[bitrixVariables.negocio.vencimento].split("T")[0],
         installmentValue: valorParcela,
         description: `${deal[bitrixVariables.negocio.descricao]}|${etapa.parcelasAnteriores}`,
         customer: {
@@ -131,7 +129,7 @@ export async function paymentHandler(
 
       const result = await assasAPI.pagamentoParcelado({
         billingType: "BOLETO",
-        dueDate: dueDateHandler(etapa.vencimento),
+        dueDate: deal[bitrixVariables.negocio.vencimento].split("T")[0],
         installmentValue: valorParcela,
         description: `${deal[bitrixVariables.negocio.descricao]}|${etapa.parcelasAnteriores}`,
         customer: {
@@ -158,7 +156,7 @@ export async function paymentHandler(
     // À vista
     const result = await assasAPI.cobranca({
       billingType: "BOLETO",
-      dueDate: dueDateHandler(5),
+      dueDate: deal[bitrixVariables.negocio.vencimento].split("T")[0],
       value: +deal.OPPORTUNITY,
       description: deal[bitrixVariables.negocio.descricao],
       customer: {

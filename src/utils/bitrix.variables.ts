@@ -10,6 +10,7 @@ export const bitrixVariables = {
   },
   negocio: {
     pausa: "UF_CRM_1728400132889",
+    vencimento: "UF_CRM_1730391004268",
     descricao: "UF_CRM_1726164261024",
     observacoes: "UF_CRM_1726164278069",
     conta: "UF_CRM_1726942846255",
@@ -21,6 +22,6 @@ export const bitrixVariables = {
     entrada_paga: "UF_CRM_1727109596567",
     etapa_atual: "UF_CRM_1727712069953",
     nota_requisitada: "UF_CRM_1728492786413",
-    pagamento_requisitado: "UF_CRM_1728492762385"
+    pagamento_requisitado: "UF_CRM_1728492762385",
   },
 };

@@ -202,6 +202,8 @@ bitrixRouter.post(`/bitrix/deals`, async (req: Request, res: Response) => {
             [bitrixVariables.negocio.pagamento_requisitado]: "1",
           });
 
+          await new Promise((resolve) => setTimeout(resolve, 2500));
+
           await bitrixAPI.addLog(
             id,
             "Cobrança criada!",
