@@ -3,9 +3,9 @@ import { bitrixVariables } from "../utils/bitrix.variables";
 
 export class BitrixAPI {
   private bitrix_access_token =
-    "7f671f67007139f9006d89e900000823a0ab07951967bbc14ca93739606549b354b47b";
+    "21872367007139f9006d89e900000823a0ab077a1b5d051ebd694ccea2d27f3018a10b";
   private bitrix_refresh_token =
-    "6fe64667007139f9006d89e900000823a0ab07987a98bdbf297624ca47c2da907e47fd";
+    "11064b67007139f9006d89e900000823a0ab07a301903820c3f02205ff0be438211ee7";
 
   private async reset_tokens() {
     const options: RequestInit = {
