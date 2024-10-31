@@ -2,10 +2,8 @@ import { dotenvConfig } from "../config/env.config";
 import { bitrixVariables } from "../utils/bitrix.variables";
 
 export class BitrixAPI {
-  private bitrix_access_token =
-    "21872367007139f9006d89e900000823a0ab077a1b5d051ebd694ccea2d27f3018a10b";
-  private bitrix_refresh_token =
-    "11064b67007139f9006d89e900000823a0ab07a301903820c3f02205ff0be438211ee7";
+  private bitrix_access_token = dotenvConfig.BITRIX.ACCESS_TOKEN;
+  private bitrix_refresh_token = dotenvConfig.BITRIX.REFRESH_TOKEN;
 
   private async reset_tokens() {
     const options: RequestInit = {
