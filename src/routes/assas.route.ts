@@ -12,6 +12,8 @@ AssasRouter.post("/assas", async (req: Request, res: Response) => {
   if (req.headers["asaas-access-token"] !== dotenvConfig.ASSAS.WEBHOOK_TOKEN)
     return res.status(401).send("Unauthorized");
 
+  return res.status(204).send("alright");
+
   try {
     switch (req.body.event) {
       case "PAYMENT_CONFIRMED": // Aguardando pagamento
